@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Studio Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: fixed ink sidebar, working canvas on the right; each view is a broker task. */
+  --ink: #14213a;
+  --ink-2: #1f2f4f;
+  --paper: #f4f5f7;
+  --card: #ffffff;
+  --line: #e1e4ea;
+  --text: #1b2333;
+  --muted: #5f6b80;
+  --brass: #a8822f;
+  --brass-soft: #f5eedc;
+  --good: #217a52; --good-bg: #e4f3ea;
+  --warn: #9a6400; --warn-bg: #fbf0d9;
+  --bad: #b3263c; --bad-bg: #fbe5e8;
+  --info: #2c5fb3; --info-bg: #e5edfa;
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--body); font-size: 14px; color: var(--text); background: var(--paper); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.app { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+/* Sidebar */
+.side { background: var(--ink); color: #c9d2e3; display: flex; flex-direction: column; padding: 18px 12px; gap: 4px; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.brand .mark { width: 32px; height: 32px; border-radius: 7px; background: var(--brass); color: var(--ink); font-family: var(--display); font-weight: 600; font-size: 18px; display: grid; place-items: center; }
+.brand b { color: #fff; font-family: var(--display); font-size: 18px; font-weight: 600; display: block; }
+.brand small { font-size: 11px; color: #8d9ab3; }
+.nav-sec { font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: #7f8ca6; padding: 14px 10px 6px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; color: #c9d2e3; text-decoration: none; font-weight: 500; }
+.nav a:hover { background: var(--ink-2); }
+.nav a.on { background: #26385c; color: #fff; }
+.nav a .dot { width: 8px; height: 8px; border-radius: 2px; background: #3d5078; flex-shrink: 0; }
+.nav a.on .dot { background: var(--brass); }
+.nav a .ct { margin-left: auto; font-size: 11px; background: #2f4269; color: #dfe6f3; border-radius: 9px; padding: 0 7px; }
+.side .me { margin-top: auto; display: flex; gap: 10px; align-items: center; padding: 12px 8px 0; border-top: 1px solid #26385c; }
+.av { width: 32px; height: 32px; border-radius: 50%; background: #3a4e77; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.side .me b { color: #fff; font-size: 13px; display: block; }
+.side .me small { font-size: 11px; color: #8d9ab3; }
+/* Main */
+.main { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.top { height: 60px; background: var(--card); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; padding: 0 24px; flex-shrink: 0; }
+.top h1 { font-family: var(--display); font-weight: 600; font-size: 21px; text-wrap: balance; }
+.top .crumb { color: var(--muted); font-size: 12.5px; }
+.top .sp { flex: 1; }
+.proto { font-size: 11.5px; font-weight: 600; color: var(--brass); background: var(--brass-soft); border: 1px solid #e6d6ad; padding: 4px 10px; border-radius: 999px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 7px 13px; border-radius: 7px; font-weight: 600; font-size: 13px; }
+.btn:hover { border-color: #c5cbd6; }
+.btn.pri { background: var(--ink); border-color: var(--ink); color: #fff; }
+.btn.pri:hover { background: var(--ink-2); }
+.btn.gold { background: var(--brass); border-color: var(--brass); color: #fff; }
+.view { flex: 1; overflow-y: auto; padding: 22px 24px 40px; display: none; }
+.view.on { display: block; }
+.grid { display: grid; gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+.card h2 { font-size: 14.5px; font-weight: 700; margin-bottom: 2px; }
+.card .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+.kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kpi .l { color: var(--muted); font-size: 12px; font-weight: 500; }
+.kpi .v { font-family: var(--display); font-size: 30px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.kpi .c { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.kpi .c b { color: var(--good); }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.p-good { background: var(--good-bg); color: var(--good); }
+.p-warn { background: var(--warn-bg); color: var(--warn); }
+.p-bad { background: var(--bad-bg); color: var(--bad); }
+.p-info { background: var(--info-bg); color: var(--info); }
+.p-mut { background: #eef0f3; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: #f8f9fb; }
+td .nm { font-weight: 700; }
+td .sm { color: var(--muted); font-size: 12px; }
+.num { text-align: right; }
+.bar { height: 6px; background: #eceff3; border-radius: 3px; overflow: hidden; width: 110px; }
+.bar i { display: block; height: 100%; background: var(--brass); }
+.cols-2 { grid-template-columns: 1.6fr 1fr; }
+.feed { display: flex; flex-direction: column; gap: 12px; }
+.fi { display: flex; gap: 10px; font-size: 13px; line-height: 1.45; }
+.fi .ic { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.fi small { color: var(--muted); display: block; font-size: 11.5px; }
+/* OM builder */
+.om { grid-template-columns: 250px minmax(0, 1fr) 300px; align-items: start; }
+.steps { display: flex; flex-direction: column; gap: 2px; }
+.st { display: flex; gap: 10px; padding: 9px 8px; border-radius: 7px; align-items: flex-start; }
+.st .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0; border: 1.5px solid #c5cbd6; color: var(--muted); }
+.st.done .n { background: var(--good); border-color: var(--good); color: #fff; }
+.st.run .n { border-color: var(--brass); color: var(--brass); }
+.st.run { background: var(--brass-soft); }
+.st b { font-size: 13px; display: block; }
+.st small { color: var(--muted); font-size: 11.5px; }
+.agents { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.ag { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.ag .m { margin-left: auto; color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.stage { background: #e9ecf1; border-radius: 10px; padding: 18px; display: grid; place-items: center; }
+.slide { width: 100%; max-width: 720px; aspect-ratio: 16 / 9; background: #fff; box-shadow: 0 6px 24px rgba(20, 33, 58, .14); border-radius: 4px; position: relative; overflow: hidden; container-type: inline-size; }
+.slide .sbar { position: absolute; left: 0; top: 0; bottom: 0; width: 1.6cqw; background: var(--ink); }
+.slide .inner { position: absolute; inset: 0 0 0 1.6cqw; padding: 5cqw 6cqw 4cqw; display: flex; flex-direction: column; }
+.slide .kick { font-size: 1.6cqw; letter-spacing: .3cqw; text-transform: uppercase; color: var(--brass); font-weight: 700; }
+.slide h3 { font-family: var(--display); font-weight: 600; font-size: 4.2cqw; line-height: 1.15; color: var(--ink); margin-top: 1cqw; }
+.slide p, .slide li { font-size: 1.9cqw; line-height: 1.5; color: #333c4d; }
+.slide .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 1.4cqw; color: #8a93a3; border-top: 1px solid #e6e8ec; padding-top: 1.2cqw; }
+.slide .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw; margin-top: 2.5cqw; }
+.slide .hl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2cqw; margin-top: 3cqw; }
+.slide .hl div { border-top: .4cqw solid var(--brass); padding-top: 1.2cqw; }
+.slide .hl b { font-family: var(--display); font-size: 3.6cqw; color: var(--ink); display: block; }
+.slide .hl span { font-size: 1.6cqw; color: #4b5567; }
+.slide ul { padding-left: 2.4cqw; display: flex; flex-direction: column; gap: .8cqw; margin-top: 2cqw; }
+.slide .cover { background: var(--ink); color: #fff; position: absolute; inset: 0; padding: 7cqw; display: flex; flex-direction: column; }
+.slide .cover .kick { color: #d6b56a; }
+.slide .cover h3 { color: #fff; font-size: 6cqw; margin-top: 2cqw; }
+.slide .cover p { color: #c9d2e3; font-size: 2.1cqw; margin-top: 1.5cqw; }
+.slide .cover .foot { border-color: #34466b; color: #8d9ab3; }
+.slide table { font-size: 1.6cqw; margin-top: 2cqw; }
+.slide th, .slide td { padding: .9cqw 1cqw; font-size: 1.6cqw; }
+.slide th { letter-spacing: 0; }
+.thumbs { display: flex; gap: 10px; margin-top: 14px; overflow-x: auto; padding-bottom: 4px; width: 100%; max-width: 720px; }
+.th { flex: 0 0 104px; border: 2px solid transparent; border-radius: 5px; background: #fff; padding: 6px; text-align: left; font-size: 10.5px; color: var(--muted); line-height: 1.3; }
+.th.on { border-color: var(--brass); }
+.th b { display: block; color: var(--text); font-size: 11px; }
+.th .flag { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+.qc { display: flex; flex-direction: column; gap: 9px; }
+.chk { display: flex; gap: 9px; font-size: 12.5px; line-height: 1.45; padding: 9px 10px; border-radius: 8px; background: #f8f9fb; border-left: 3px solid var(--good); }
+.chk.w { border-left-color: var(--warn); background: #fffaf0; }
+.chk.b { border-left-color: var(--bad); background: #fff6f7; }
+.chk small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.chk .act { margin-top: 6px; display: flex; gap: 6px; }
+.chk .act button { font-size: 11.5px; padding: 3px 9px; border-radius: 5px; border: 1px solid var(--line); background: #fff; font-weight: 600; }
+.score { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.score b { font-family: var(--display); font-size: 34px; color: var(--ink); }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; width: 100%; max-width: 720px; margin-bottom: 12px; }
+/* Interview */
+.iv { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+.chat { display: flex; flex-direction: column; gap: 12px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+.bub { max-width: 78%; padding: 10px 13px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+.bub.ai { background: #f1f3f7; border-top-left-radius: 3px; }
+.bub.me { background: var(--ink); color: #fff; align-self: flex-end; border-top-right-radius: 3px; }
+.bub small { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; font-weight: 600; }
+.bub.me small { color: #a9b5cc; }
+.composer { display: flex; gap: 8px; margin-top: 14px; }
+.composer input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; }
+.mic { width: 42px; border-radius: 8px; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; }
+.mic.live { background: var(--bad); border-color: var(--bad); }
+.mic.live svg path { fill: #fff; }
+.doclist { display: flex; flex-direction: column; gap: 8px; }
+.doc { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+.doc .pill { margin-left: auto; }
+.prog { height: 8px; border-radius: 4px; background: #eceff3; overflow: hidden; margin: 6px 0 14px; }
+.prog i { display: block; height: 100%; background: var(--good); }
+/* Financials */
+.fin { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+/* Admin */
+.adm { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.mon { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.mon div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.mon b { font-family: var(--display); font-size: 22px; display: block; font-variant-numeric: tabular-nums; }
+.mon span { font-size: 12px; color: var(--muted); }
+/* Assistant drawer */
+.fab { position: fixed; right: 22px; bottom: 22px; background: var(--brass); color: #fff; border: none; border-radius: 999px; padding: 12px 18px; font-weight: 700; box-shadow: 0 6px 18px rgba(168, 130, 47, .35); z-index: 20; }
+.drawer { position: fixed; right: 22px; bottom: 80px; width: 360px; max-width: calc(100vw - 44px); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(20, 33, 58, .2); display: none; flex-direction: column; z-index: 20; overflow: hidden; }
+.drawer.open { display: flex; }
+.drawer .hd { background: var(--ink); color: #fff; padding: 12px 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.drawer .hd button { background: none; border: none; color: #c9d2e3; font-size: 18px; }
+.drawer .bd { padding: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 340px; overflow-y: auto; }
+.drawer .sugg { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.drawer .sugg button { font-size: 12px; border: 1px solid var(--line); background: #f8f9fb; border-radius: 999px; padding: 5px 10px; }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 8px; font-weight: 600; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 30; }
+.toast.show { opacity: 1; }
+@media (max-width: 1180px) { .om { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .app { grid-template-columns: 1fr; } .side { display: none; } .cols-2, .iv, .fin, .adm { grid-template-columns: 1fr; } .top { padding: 0 16px; } .view { padding: 16px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark">D</div><div><b>Deal Studio</b><small>Internal platform</small></div></div>
+    <nav class="nav" id="nav">
+      <div class="nav-sec">Broker portal</div>
+      <a href="#dashboard" data-v="dashboard"><span class="dot"></span>Pipeline</a>
+      <a href="#om" data-v="om"><span class="dot"></span>OM Builder<span class="ct">3</span></a>
+      <a href="#financials" data-v="financials"><span class="dot"></span>Financial analysis</a>
+      <div class="nav-sec">Seller portal</div>
+      <a href="#interview" data-v="interview"><span class="dot"></span>Seller interview</a>
+      <div class="nav-sec">Administrator</div>
+      <a href="#admin" data-v="admin"><span class="dot"></span>AI costs and health</a>
+    </nav>
+    <div class="me"><div class="av">MK</div><div><b>Michael Kerr</b><small>Senior Broker</small></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div><div class="crumb" id="crumb">Broker portal</div><h1 id="ttl">Pipeline</h1></div>
+      <div class="sp"></div>
+      <span class="proto">Clickable prototype · sample data</span>
+      <button class="btn pri" id="newDeal">New engagement</button>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="view" id="v-dashboard">
+      <div class="grid kpis">
+        <div class="card kpi"><div class="l">Active engagements</div><div class="v">14</div><div class="c"><b>+3</b> this quarter</div></div>
+        <div class="card kpi"><div class="l">OMs in production</div><div class="v">3</div><div class="c">2 in Editor review</div></div>
+        <div class="card kpi"><div class="l">Avg. OM drafting time</div><div class="v">2.1 days</div><div class="c">Was 17 days before AI</div></div>
+        <div class="card kpi"><div class="l">AI cost this month</div><div class="v">$58</div><div class="c">$4.10 per OM · cap $400</div></div>
+      </div>
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <h2>Engagements</h2><div class="sub">Click a deal to open its Offering Memorandum</div>
+          <table>
+            <thead><tr><th>Deal</th><th>Stage</th><th>Collateral</th><th class="num">Adj. EBITDA</th><th>Broker</th></tr></thead>
+            <tbody>
+              <tr class="click" data-go="om"><td><div class="nm">Project Cascade</div><div class="sm">Precision machining · Ohio</div></td><td><span class="pill p-warn">Editor review</span></td><td><div class="bar"><i style="width:86%"></i></div><div class="sm">OM 86% · 24 slides</div></td><td class="num">$3.1M</td><td>MK</td></tr>
+              <tr class="click" data-go="om"><td><div class="nm">Project Harbor</div><div class="sm">Commercial HVAC · Texas</div></td><td><span class="pill p-info">Drafting</span></td><td><div class="bar"><i style="width:48%"></i></div><div class="sm">OM 48% · research running</div></td><td class="num">$2.4M</td><td>JS</td></tr>
+              <tr class="click" data-go="interview"><td><div class="nm">Project Summit</div><div class="sm">Dental group · 6 clinics</div></td><td><span class="pill p-mut">Seller interview</span></td><td><div class="bar"><i style="width:22%"></i></div><div class="sm">Interview 9 of 14 topics</div></td><td class="num">$1.8M</td><td>MK</td></tr>
+              <tr class="click" data-go="om"><td><div class="nm">Project Ironwood</div><div class="sm">Specialty logistics · Georgia</div></td><td><span class="pill p-good">Ready to market</span></td><td><div class="bar"><i style="width:100%"></i></div><div class="sm">OM, teaser, listing done</div></td><td class="num">$4.6M</td><td>AL</td></tr>
+              <tr class="click" data-go="financials"><td><div class="nm">Project Meridian</div><div class="sm">IT managed services · Arizona</div></td><td><span class="pill p-mut">Financials</span></td><td><div class="bar"><i style="width:12%"></i></div><div class="sm">Awaiting 2025 P&amp;L</div></td><td class="num">$1.2M</td><td>JS</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Agent activity</h2><div class="sub">Live log of what the agents did today</div>
+          <div class="feed">
+            <div class="fi"><div class="ic p-warn">ED</div><div>Editor Agent flagged 2 issues in <b>Project Cascade</b> OM<small>10:42 AM · customer concentration source, slide 14 chart</small></div></div>
+            <div class="fi"><div class="ic p-info">RS</div><div>Research Agent finished industry report for <b>Project Harbor</b><small>10:18 AM · 31 sources, market size $14.2B</small></div></div>
+            <div class="fi"><div class="ic p-good">FN</div><div>Financial Agent reconciled 3 years of P&amp;L for <b>Project Cascade</b><small>9:51 AM · 7 add-backs, all tied to ledger</small></div></div>
+            <div class="fi"><div class="ic p-mut">IV</div><div>Seller interview session 2 completed for <b>Project Summit</b><small>9:20 AM · 38 minutes, transcript summarized</small></div></div>
+            <div class="fi"><div class="ic p-good">LS</div><div>Listing published for <b>Project Ironwood</b><small>Yesterday · blind teaser, 2 marketplaces</small></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OM BUILDER -->
+    <section class="view" id="v-om">
+      <div class="grid om">
+        <div class="card">
+          <h2>Project Cascade</h2><div class="sub">Offering Memorandum · v3</div>
+          <div class="steps">
+            <div class="st done"><div class="n">✓</div><div><b>Seller interview</b><small>2 sessions · 74 min</small></div></div>
+            <div class="st done"><div class="n">✓</div><div><b>Financial analysis</b><small>FY2022 to TTM Sep 2025</small></div></div>
+            <div class="st done"><div class="n">✓</div><div><b>Industry research</b><small>27 sources cited</small></div></div>
+            <div class="st done"><div class="n">✓</div><div><b>Draft OM</b><small>24 slides generated</small></div></div>
+            <div class="st run"><div class="n">5</div><div><b>Editor Agent review</b><small>2 items need a broker</small></div></div>
+            <div class="st"><div class="n">6</div><div><b>Broker approval</b><small>Then export PPTX and PDF</small></div></div>
+          </div>
+          <div class="agents">
+            <div class="nav-sec" style="color:var(--muted);padding:10px 0 2px">Agents on this deal</div>
+            <div class="ag"><span class="pill p-good">Done</span>Research<span class="m">small model · $0.62</span></div>
+            <div class="ag"><span class="pill p-good">Done</span>Financials<span class="m">mid model · $0.94</span></div>
+            <div class="ag"><span class="pill p-good">Done</span>Writer<span class="m">top model · $1.71</span></div>
+            <div class="ag"><span class="pill p-warn">Review</span>Editor<span class="m">top model · $0.83</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="toolbar">
+            <button class="btn" data-toast="Slide regenerated with the same data">Regenerate slide</button>
+            <button class="btn" data-toast="Exported Project_Cascade_OM_v3.pdf (sample)">Export PDF</button>
+            <button class="btn gold" data-toast="Exported Project_Cascade_OM_v3.pptx with editable text, charts and tables (sample)">Export PowerPoint</button>
+          </div>
+          <div class="stage">
+            <div class="slide" id="slide"></div>
+            <div class="thumbs" id="thumbs"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Editor Agent</h2><div class="sub">Independent quality control before approval</div>
+          <div class="score"><b>94</b><span class="pill p-warn">2 items need you</span></div>
+          <div class="qc" id="qc">
+            <div class="chk"><div>EBITDA on slides 2, 9 and 15 matches the financial model ($3.1M)<small>Traced to TTM Sep 2025 P&amp;L, row 48</small></div></div>
+            <div class="chk"><div>Brand template applied to all 24 slides<small>Fonts, colors and logo position checked</small></div></div>
+            <div class="chk w" id="c1"><div>Customer concentration "no customer above 12%" has no source<small>Slide 6 · seller interview mentions 14% for the top account</small><div class="act"><button data-fix="c1" data-msg="Changed to 14% and linked to interview session 2">Use 14% from interview</button><button data-fix="c1" data-msg="Sent to the broker for review">Ask broker</button></div></div></div>
+            <div class="chk w" id="c2"><div>Chart labels overlap on the revenue bridge<small>Slide 14 · two labels collide at 1280 px</small><div class="act"><button data-fix="c2" data-msg="Labels moved and chart re-rendered">Auto fix layout</button></div></div></div>
+            <div class="chk"><div>No confidential names on the blind teaser<small>Seller name and address removed from 3 places</small></div></div>
+          </div>
+          <button class="btn pri" style="width:100%;justify-content:center;margin-top:14px" data-toast="Sent to Michael Kerr for final approval">Send for broker approval</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINANCIALS -->
+    <section class="view" id="v-financials">
+      <div class="grid kpis">
+        <div class="card kpi"><div class="l">TTM revenue</div><div class="v">$14.8M</div><div class="c"><b>+11%</b> year over year</div></div>
+        <div class="card kpi"><div class="l">Adjusted EBITDA</div><div class="v">$3.1M</div><div class="c">21.0% margin</div></div>
+        <div class="card kpi"><div class="l">Add-backs</div><div class="v">$412K</div><div class="c">7 items, all documented</div></div>
+        <div class="card kpi"><div class="l">Indicative range</div><div class="v">5.0x to 6.0x</div><div class="c">$15.5M to $18.6M EV</div></div>
+      </div>
+      <div class="grid fin" style="margin-top:16px">
+        <div class="card"><h2>Revenue and adjusted EBITDA</h2><div class="sub">Project Cascade · fiscal years, $ millions</div>
+          <div class="legend"><span><i style="background:var(--ink)"></i>Revenue</span><span><i style="background:var(--brass)"></i>Adjusted EBITDA</span></div>
+          <svg id="finChart" viewBox="0 0 620 260" width="100%" role="img" aria-label="Revenue and EBITDA by year"></svg>
+        </div>
+        <div class="card"><h2>EBITDA adjustments</h2><div class="sub">Each add-back is tied to a source document</div>
+          <table><thead><tr><th>Item</th><th class="num">Amount</th><th>Source</th></tr></thead><tbody>
+            <tr><td>Reported EBITDA</td><td class="num">$2,688K</td><td><span class="pill p-mut">P&amp;L</span></td></tr>
+            <tr><td>Owner salary above market</td><td class="num">$185K</td><td><span class="pill p-good">Payroll</span></td></tr>
+            <tr><td>One-time legal settlement</td><td class="num">$96K</td><td><span class="pill p-good">Invoice</span></td></tr>
+            <tr><td>Personal vehicle expenses</td><td class="num">$41K</td><td><span class="pill p-good">GL detail</span></td></tr>
+            <tr><td>Relocation of CNC line</td><td class="num">$58K</td><td><span class="pill p-good">Invoice</span></td></tr>
+            <tr><td>Other (3 items)</td><td class="num">$32K</td><td><span class="pill p-warn">1 pending</span></td></tr>
+            <tr><td><b>Adjusted EBITDA</b></td><td class="num"><b>$3,100K</b></td><td></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERVIEW -->
+    <section class="view" id="v-interview">
+      <div class="grid iv">
+        <div class="card">
+          <h2>Seller interview · Project Summit</h2><div class="sub">The AI interviewer asks, follows up and fills the OM outline as the seller answers</div>
+          <div class="chat" id="chat">
+            <div class="bub ai"><small>AI interviewer</small>Thanks, Dr. Patel. Last time you mentioned the Mesa clinic opened in 2021. How long did it take to reach break even?</div>
+            <div class="bub me"><small>Seller</small>About 14 months. It's now our second busiest location.</div>
+            <div class="bub ai"><small>AI interviewer</small>That's useful for the growth section. What share of revenue comes from insurance versus private pay across all six clinics?</div>
+            <div class="bub me"><small>Seller</small>Roughly 70% insurance, 30% private pay. Private pay has grown since we added clear aligners.</div>
+            <div class="bub ai"><small>AI interviewer</small>Noted. Which roles would a buyer need to keep if you stepped back after the sale?</div>
+          </div>
+          <form class="composer" id="ivForm">
+            <input id="ivIn" placeholder="Type your answer, or use the microphone" aria-label="Answer">
+            <button type="button" class="mic" id="mic" aria-label="Answer by voice"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-2.1a7 7 0 0 0 6-6.9z" fill="#14213a"/></svg></button>
+            <button class="btn pri" type="submit">Send</button>
+          </form>
+        </div>
+        <div class="grid">
+          <div class="card"><h2>Interview progress</h2><div class="sub">9 of 14 topics covered</div>
+            <div class="prog"><i style="width:64%"></i></div>
+            <div class="doclist">
+              <div class="doc">History and ownership<span class="pill p-good">Done</span></div>
+              <div class="doc">Locations and growth<span class="pill p-good">Done</span></div>
+              <div class="doc">Revenue mix<span class="pill p-good">Done</span></div>
+              <div class="doc">Team and key roles<span class="pill p-info">Now</span></div>
+              <div class="doc">Reason for sale<span class="pill p-mut">Next</span></div>
+            </div>
+          </div>
+          <div class="card"><h2>Documents requested</h2><div class="sub">Upload securely, the Financial Agent reads them</div>
+            <div class="doclist">
+              <div class="doc">P&amp;L 2022 to 2024<span class="pill p-good">Received</span></div>
+              <div class="doc">2025 YTD P&amp;L<span class="pill p-good">Received</span></div>
+              <div class="doc">Lease agreements (6)<span class="pill p-warn">4 of 6</span></div>
+              <div class="doc">Payroll summary<span class="pill p-bad">Missing</span></div>
+            </div>
+            <button class="btn" style="margin-top:12px;width:100%;justify-content:center" data-toast="Upload window would open here">Upload documents</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="view" id="v-admin">
+      <div class="grid adm">
+        <div class="card"><h2>Model routing</h2><div class="sub">Routine steps use cheaper models, final writing and editing use the best</div>
+          <table><thead><tr><th>Task</th><th>Model tier</th><th class="num">Avg. cost</th><th class="num">Runs (30d)</th></tr></thead><tbody>
+            <tr><td>Document extraction</td><td><span class="pill p-mut">Small</span></td><td class="num">$0.03</td><td class="num">1,284</td></tr>
+            <tr><td>Industry research</td><td><span class="pill p-mut">Small</span></td><td class="num">$0.21</td><td class="num">96</td></tr>
+            <tr><td>Financial reconciliation</td><td><span class="pill p-info">Mid</span></td><td class="num">$0.31</td><td class="num">52</td></tr>
+            <tr><td>Seller interview (voice)</td><td><span class="pill p-info">Mid</span></td><td class="num">$0.48</td><td class="num">23</td></tr>
+            <tr><td>OM writing</td><td><span class="pill p-warn">Top</span></td><td class="num">$1.71</td><td class="num">14</td></tr>
+            <tr><td>Editor Agent review</td><td><span class="pill p-warn">Top</span></td><td class="num">$0.83</td><td class="num">31</td></tr>
+          </tbody></table>
+        </div>
+        <div class="grid">
+          <div class="card"><h2>AI spend, last 30 days</h2><div class="sub">$58 of $400 monthly cap</div>
+            <svg id="spend" viewBox="0 0 380 130" width="100%" role="img" aria-label="Daily AI spend"></svg>
+          </div>
+          <div class="card"><h2>System health</h2><div class="sub">Automated monitoring on DigitalOcean</div>
+            <div class="mon">
+              <div><b>99.97%</b><span>Uptime, 30 days</span></div>
+              <div><b>0</b><span>Failed jobs today</span></div>
+              <div><b>1.8 s</b><span>Avg. page load</span></div>
+            </div>
+            <div class="feed" style="margin-top:12px">
+              <div class="fi"><div class="ic p-good">OK</div><div>Nightly backup completed<small>2:00 AM · database and documents</small></div></div>
+              <div class="fi"><div class="ic p-warn">!</div><div>Research API slow, auto retried and recovered<small>Yesterday 4:12 PM · no data lost</small></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<button class="fab" id="fab">Ask Deal Studio</button>
+<div class="drawer" id="drawer">
+  <div class="hd">Deal assistant<button id="closeD" aria-label="Close">×</button></div>
+  <div class="bd" id="dBody"><div class="bub ai"><small>Assistant</small>Ask me anything about your deals, financials or OMs.</div></div>
+  <div class="sugg" id="sugg">
+    <button>What is Cascade's EBITDA margin?</button>
+    <button>Which OMs need my approval?</button>
+    <button>Summarize Summit's interview</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const titles = { dashboard: ["Broker portal", "Pipeline"], om: ["Broker portal · Project Cascade", "OM Builder"], financials: ["Broker portal · Project Cascade", "Financial analysis"], interview: ["Seller portal", "Seller interview"], admin: ["Administrator", "AI costs and health"] };
+function show(v) {
+  if (!titles[v]) v = "dashboard";
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.v === v));
+  document.getElementById("crumb").textContent = titles[v][0];
+  document.getElementById("ttl").textContent = titles[v][1];
+}
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+document.querySelectorAll("[data-go]").forEach(r => r.addEventListener("click", () => { location.hash = r.dataset.go; }));
+show(location.hash.slice(1));
+
+const toastEl = document.getElementById("toast"); let tt;
+function toast(m) { toastEl.textContent = m; toastEl.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove("show"), 2600); }
+document.querySelectorAll("[data-toast]").forEach(b => b.addEventListener("click", () => toast(b.dataset.toast)));
+document.getElementById("newDeal").addEventListener("click", () => toast("New engagement wizard would open here"));
+
+// Slides
+const slides = [
+  { t: "Cover", f: "g", h: `<div class="cover"><div class="kick">Confidential Offering Memorandum</div><h3>Project Cascade</h3><p>A precision machining business serving aerospace and medical OEMs</p><div class="foot"><span>Prepared by Deal Studio for [Firm Name]</span><span>November 2026</span></div></div>` },
+  { t: "Investment highlights", f: "g", h: `<div class="sbar"></div><div class="inner"><div class="kick">Section 1</div><h3>Investment highlights</h3><div class="hl"><div><b>$14.8M</b><span>TTM revenue, up 11% year over year</span></div><div><b>21.0%</b><span>Adjusted EBITDA margin, $3.1M</span></div><div><b>32 yrs</b><span>Operating history with AS9100 certification</span></div></div><ul><li>Long standing relationships with 4 of the top 10 aerospace suppliers in the Midwest</li><li>Recently added 5 axis CNC capacity with room for 30% more volume</li><li>Experienced second line management ready to stay after the transition</li></ul><div class="foot"><span>Project Cascade · Confidential</span><span>2</span></div></div>` },
+  { t: "Financial summary", f: "g", h: `<div class="sbar"></div><div class="inner"><div class="kick">Section 4</div><h3>Financial summary</h3><table><thead><tr><th>$ thousands</th><th class="num">FY2022</th><th class="num">FY2023</th><th class="num">FY2024</th><th class="num">TTM Sep 25</th></tr></thead><tbody><tr><td>Revenue</td><td class="num">11,420</td><td class="num">12,690</td><td class="num">13,330</td><td class="num">14,800</td></tr><tr><td>Gross profit</td><td class="num">3,880</td><td class="num">4,440</td><td class="num">4,800</td><td class="num">5,470</td></tr><tr><td>Reported EBITDA</td><td class="num">1,940</td><td class="num">2,210</td><td class="num">2,400</td><td class="num">2,688</td></tr><tr><td><b>Adjusted EBITDA</b></td><td class="num"><b>2,290</b></td><td class="num"><b>2,560</b></td><td class="num"><b>2,790</b></td><td class="num"><b>3,100</b></td></tr></tbody></table><p style="margin-top:2cqw">Every figure above is traced to the seller's ledger by the Financial Agent and verified by the Editor Agent.</p><div class="foot"><span>Project Cascade · Confidential</span><span>9</span></div></div>` },
+  { t: "Customer base", f: "w", h: `<div class="sbar"></div><div class="inner"><div class="kick">Section 3</div><h3>A diversified customer base</h3><div class="two"><div><p><b>62 active customers</b> across aerospace, medical devices and industrial equipment.</p><ul><li>Average relationship length of 11 years</li><li style="background:#fff3cf;border-radius:4px;padding:0 4px">No customer above 12% of revenue <i style="color:#9a6400">(flagged)</i></li><li>Repeat orders make up 88% of revenue</li></ul></div><div><p><b>Revenue by end market</b></p><ul><li>Aerospace 46%</li><li>Medical devices 31%</li><li>Industrial 23%</li></ul></div></div><div class="foot"><span>Project Cascade · Confidential</span><span>6</span></div></div>` },
+  { t: "Industry overview", f: "g", h: `<div class="sbar"></div><div class="inner"><div class="kick">Section 5</div><h3>Industry overview</h3><div class="two"><div><p>The US precision machining market is fragmented, and buyers value certified shops with aerospace approvals and skilled labor.</p></div><div><ul><li>Reshoring of aerospace supply chains continues to add demand</li><li>Certification and skilled labor are the main barriers to entry</li><li>27 sources cited in the appendix</li></ul></div></div><div class="foot"><span>Project Cascade · Confidential</span><span>11</span></div></div>` }
+];
+const slideEl = document.getElementById("slide"), thumbsEl = document.getElementById("thumbs");
+function pick(i) { slideEl.innerHTML = slides[i].h; thumbsEl.querySelectorAll(".th").forEach((t, j) => t.classList.toggle("on", i === j)); }
+slides.forEach((s, i) => { const b = document.createElement("button"); b.className = "th"; b.innerHTML = `<b>Slide ${[1,2,9,6,11][i]}</b><span class="flag" style="background:${s.f === "w" ? "var(--warn)" : "var(--good)"}"></span>${s.t}`; b.addEventListener("click", () => pick(i)); thumbsEl.appendChild(b); });
+pick(1);
+
+// Editor fixes
+let open = 2; const scoreEl = document.querySelector(".score");
+document.querySelectorAll("[data-fix]").forEach(b => b.addEventListener("click", () => {
+  const c = document.getElementById(b.dataset.fix); if (!c.classList.contains("w")) return;
+  c.classList.remove("w"); c.querySelector(".act").remove();
+  c.querySelector("small").textContent = b.dataset.msg; open--;
+  scoreEl.innerHTML = open ? `<b>97</b><span class="pill p-warn">1 item needs you</span>` : `<b>100</b><span class="pill p-good">Ready for approval</span>`;
+  if (b.dataset.fix === "c1") { slides[3].f = "g"; slides[3].h = slides[3].h.replace(/<li style[^>]*>No customer above 12% of revenue <i[^>]*>\(flagged\)<\/i><\/li>/, "<li>Largest customer is 14% of revenue</li>"); thumbsEl.children[3].querySelector(".flag").style.background = "var(--good)"; }
+  toast(b.dataset.msg);
+}));
+
+// Financial chart
+(function () {
+  const yrs = ["FY2022", "FY2023", "FY2024", "TTM Sep 25"], rev = [11.42, 12.69, 13.33, 14.8], eb = [2.29, 2.56, 2.79, 3.1];
+  const s = document.getElementById("finChart"), W = 620, H = 260, L = 40, B = 30, T = 14, max = 16;
+  const y = v => H - B - (v / max) * (H - B - T); let h = "";
+  [0, 4, 8, 12, 16].forEach(v => { h += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#eef0f3"/><text x="${L - 8}" y="${y(v) + 4}" font-size="11" fill="#5f6b80" text-anchor="end">$${v}M</text>`; });
+  const gw = (W - L) / yrs.length;
+  yrs.forEach((yr, i) => {
+    const x = L + i * gw + gw / 2;
+    const bar = (v, dx, c) => { const yy = y(v), bh = H - B - yy; return `<path d="M${x + dx - 18} ${H - B} V${yy + 4} Q${x + dx - 18} ${yy} ${x + dx - 14} ${yy} H${x + dx + 14} Q${x + dx + 18} ${yy} ${x + dx + 18} ${yy + 4} V${H - B} Z" fill="${c}"/>`; };
+    h += bar(rev[i], -21, "#14213a") + bar(eb[i], 21, "#a8822f");
+    h += `<text x="${x - 21}" y="${y(rev[i]) - 6}" font-size="11" fill="#1b2333" text-anchor="middle" font-weight="600">${rev[i].toFixed(1)}</text>`;
+    h += `<text x="${x + 21}" y="${y(eb[i]) - 6}" font-size="11" fill="#1b2333" text-anchor="middle" font-weight="600">${eb[i].toFixed(1)}</text>`;
+    h += `<text x="${x}" y="${H - 9}" font-size="11.5" fill="#5f6b80" text-anchor="middle">${yr}</text>`;
+  });
+  s.innerHTML = h;
+})();
+
+// Spend chart
+(function () {
+  const d = [1.2,0.8,2.9,3.4,1.1,0.4,0.3,2.2,4.1,3.0,2.6,1.9,0.5,0.4,3.8,2.7,2.2,4.6,1.8,0.6,0.2,2.4,3.1,2.0,1.5,2.9,0.7,0.3,1.6,1.8];
+  const s = document.getElementById("spend"), W = 380, H = 130, L = 30, B = 20, max = 5, bw = (W - L) / d.length;
+  const y = v => H - B - (v / max) * (H - B - 8); let h = "";
+  [0, 2.5, 5].forEach(v => { h += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#eef0f3"/><text x="${L - 6}" y="${y(v) + 4}" font-size="10" fill="#5f6b80" text-anchor="end">$${v}</text>`; });
+  d.forEach((v, i) => { const x = L + i * bw + 1.5, yy = y(v); h += `<rect x="${x}" y="${yy}" width="${bw - 3}" height="${H - B - yy}" rx="2" fill="${i === d.length - 1 ? "#a8822f" : "#9aa8c2"}"><title>Day ${i + 1}: $${v.toFixed(2)}</title></rect>`; });
+  h += `<text x="${L}" y="${H - 5}" font-size="10" fill="#5f6b80">Oct 21</text><text x="${W}" y="${H - 5}" font-size="10" fill="#5f6b80" text-anchor="end">Today</text>`;
+  s.innerHTML = h;
+})();
+
+// Seller interview
+const chat = document.getElementById("chat");
+const followUps = ["Thanks. Is that person likely to stay with a new owner, and are they under any agreement today?", "Helpful. What is the main reason you're considering a sale now?", "Got it. I've added this to the management section of the OM draft."];
+let fu = 0;
+function addBub(who, text) { const d = document.createElement("div"); d.className = "bub " + (who === "me" ? "me" : "ai"); d.innerHTML = `<small>${who === "me" ? "Seller" : "AI interviewer"}</small>`; d.appendChild(document.createTextNode(text)); chat.appendChild(d); chat.scrollTop = chat.scrollHeight; }
+document.getElementById("ivForm").addEventListener("submit", e => { e.preventDefault(); const i = document.getElementById("ivIn"); const v = i.value.trim(); if (!v) return; addBub("me", v); i.value = ""; setTimeout(() => addBub("ai", followUps[fu++ % followUps.length]), 600); });
+const mic = document.getElementById("mic");
+mic.addEventListener("click", () => { mic.classList.toggle("live"); toast(mic.classList.contains("live") ? "Voice mode on: the seller can answer out loud (sample)" : "Voice mode off"); });
+
+// Assistant
+const drawer = document.getElementById("drawer"), dBody = document.getElementById("dBody");
+document.getElementById("fab").addEventListener("click", () => drawer.classList.toggle("open"));
+document.getElementById("closeD").addEventListener("click", () => drawer.classList.remove("open"));
+const answers = {
+  "What is Cascade's EBITDA margin?": "Project Cascade's adjusted EBITDA margin is 21.0% on TTM revenue of $14.8M ($3.1M adjusted EBITDA). Source: Financial analysis, TTM Sep 2025.",
+  "Which OMs need my approval?": "Project Cascade is waiting for you: the Editor Agent scored it 94 with 2 items to confirm. Project Harbor is still drafting.",
+  "Summarize Summit's interview": "Six clinics, Mesa broke even in 14 months, revenue is about 70% insurance and 30% private pay. Team and key roles is the topic in progress."
+};
+document.querySelectorAll("#sugg button").forEach(b => b.addEventListener("click", () => {
+  const q = document.createElement("div"); q.className = "bub me"; q.innerHTML = "<small>You</small>"; q.appendChild(document.createTextNode(b.textContent)); dBody.appendChild(q);
+  setTimeout(() => { const a = document.createElement("div"); a.className = "bub ai"; a.innerHTML = "<small>Assistant</small>"; a.appendChild(document.createTextNode(answers[b.textContent])); dBody.appendChild(a); dBody.scrollTop = dBody.scrollHeight; }, 500);
+}));
+</script>
+</body>
+</html>
